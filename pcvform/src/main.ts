@@ -4,7 +4,7 @@ import { createPinia } from 'pinia'
 // Suppress TypeScript error when importing .vue single-file components
 // as declarations may not be picked up in some setups
 // @ts-ignore
-import App from './pcvForm.vue'
+import App from './App.vue'
 import './styles.css'
 import router from './router'
 

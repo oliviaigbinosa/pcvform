@@ -1,17 +1,20 @@
 <template>
-  <div class="app-wrap">
-    <!-- ── Success screen ── -->
+  <!-- ════════════════ FORM VIEW ════════════════ -->
+  <div class="page-wrap">
     <div v-if="submitted" class="card success-card">
       <div class="success-icon">✓</div>
       <h2 class="serif">Voucher Submitted</h2>
-      <p>Your email client has opened with the voucher pre-filled and ready to send.</p>
+      <p>Your email client opened with the voucher pre-filled and ready to send.</p>
       <code class="voucher-badge">{{ lastVoucherNo }}</code>
-      <button class="btn btn-primary" @click="reset">Create New Voucher</button>
+      <div class="success-actions">
+        <button class="btn btn-outline" @click="router.push({ name: 'vouchers' })">
+          View My Vouchers
+        </button>
+        <button class="btn btn-primary" @click="resetForm">New Voucher</button>
+      </div>
     </div>
 
-    <!-- ── Main form ── -->
     <div v-else class="container">
-      <!-- Header -->
       <header class="pcv-header">
         <div class="pcv-header__left">
           <div class="pcv-logo">
@@ -28,7 +31,7 @@
             </svg>
           </div>
           <div>
-            <p class="company-label">Getpayed technology solutions ltd</p>
+            <p class="company-label">Getpayed Technology Solutions Ltd.</p>
             <h1 class="serif">Petty Cash Voucher</h1>
           </div>
         </div>
@@ -38,7 +41,6 @@
         </div>
       </header>
 
-      <!-- Stepper -->
       <nav class="stepper" aria-label="Form steps">
         <div
           v-for="(label, i) in STEPS"
@@ -64,9 +66,8 @@
         </div>
       </nav>
 
-      <!-- Step card -->
       <div class="card step-card">
-        <!-- Step 0: Email Details -->
+        <!-- Step 0 -->
         <template v-if="step === 0">
           <div class="step-head">
             <svg
@@ -88,7 +89,7 @@
               <input
                 v-model="form.from"
                 type="email"
-                placeholder="yourname@company.com"
+                placeholder="yourname@gmail.com"
                 :class="{ error: errors.from }"
                 @input="clearErr('from')"
               />
@@ -99,7 +100,7 @@
               <input
                 v-model="form.to"
                 type="email"
-                placeholder="manager@company.com"
+                placeholder="recipientname@gmail.com"
                 :class="{ error: errors.to }"
                 @input="clearErr('to')"
               />
@@ -108,13 +109,13 @@
             <div class="field">
               <label class="mono-label">CC</label>
               <input v-model="form.cc" type="email" placeholder="finance@gmail.com" />
-              <span class="hint">Defaults to finance@gmail.com</span>
             </div>
             <div class="field">
               <label class="mono-label">Subject <span class="req">*</span></label>
               <input
                 v-model="form.subject"
                 type="text"
+                oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')"
                 placeholder="Petty Cash Request — Department — Month Year"
                 :class="{ error: errors.subject }"
                 @input="clearErr('subject')"
@@ -124,7 +125,7 @@
           </div>
         </template>
 
-        <!-- Step 1: Payee Info -->
+        <!-- Step 1 -->
         <template v-else-if="step === 1">
           <div class="step-head">
             <svg
@@ -156,6 +157,7 @@
               <input
                 v-model="form.payee"
                 type="text"
+                oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')"
                 placeholder="e.g. John Adeyemi / Staples Ltd."
                 :class="{ error: errors.payee }"
                 @input="clearErr('payee')"
@@ -167,6 +169,7 @@
               <input
                 v-model="form.department"
                 type="text"
+                oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')"
                 placeholder="e.g. Marketing, Operations, HR"
                 :class="{ error: errors.department }"
                 @input="clearErr('department')"
@@ -177,17 +180,16 @@
           </div>
         </template>
 
-        <!-- Step 2: Amount & Purpose -->
+        <!-- Step 2 -->
         <template v-else-if="step === 2">
           <div class="step-head">
-            <span class="dollar-icon">$</span>
             <h2>Amount &amp; Purpose</h2>
           </div>
           <div class="fields">
             <div class="field">
-              <label class="mono-label">Amount in Figures (USD) <span class="req">*</span></label>
+              <label class="mono-label">Amount in Figures (NGN) <span class="req">*</span></label>
               <div class="input-prefix">
-                <span class="prefix">$</span>
+                <span class="prefix">₦</span>
                 <input
                   v-model="form.amountFigures"
                   type="number"
@@ -203,18 +205,14 @@
             </div>
             <div class="field">
               <label class="mono-label">Amount in Words</label>
-              <textarea
-                v-model="form.amountWords"
-                rows="2"
-                placeholder="Auto-generated from the figure above"
-              ></textarea>
-              <span class="hint">Auto-filled — edit if needed.</span>
+              <textarea v-model="form.amountWords" rows="2"></textarea>
             </div>
             <div class="field">
               <label class="mono-label">Purpose / Description <span class="req">*</span></label>
               <textarea
                 v-model="form.purpose"
                 rows="4"
+                oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')"
                 placeholder="Describe what this petty cash is for..."
                 :class="{ error: errors.purpose }"
                 @input="clearErr('purpose')"
@@ -224,7 +222,7 @@
           </div>
         </template>
 
-        <!-- Step 3: Supporting Docs -->
+        <!-- Step 3 -->
         <template v-else-if="step === 3">
           <div class="step-head">
             <svg
@@ -268,7 +266,6 @@
                   <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
                 </svg>
                 <span class="upload-title">Click to attach files</span>
-                <span class="upload-hint">Receipts, invoices, approvals — any format</span>
               </button>
               <input
                 ref="fileInput"
@@ -303,7 +300,6 @@
               </ul>
               <span class="hint">Files are listed in the email body.</span>
             </div>
-
             <button type="button" class="btn btn-accent review-btn" @click="openPreview">
               <svg
                 width="16"
@@ -322,7 +318,6 @@
         </template>
       </div>
 
-      <!-- Navigation -->
       <div class="nav-row">
         <button class="btn btn-outline" :disabled="step === 0" @click="back">
           <svg
@@ -368,139 +363,22 @@
       </div>
     </div>
 
-    <!-- ── Preview Modal ── -->
-    <Teleport to="body">
-      <div v-if="showPreview" class="modal-backdrop" @click.self="showPreview = false">
-        <div class="modal" role="dialog" aria-modal="true" aria-label="Form Preview">
-          <div class="modal-header">
-            <div class="modal-header__title">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-              Form Preview
-            </div>
-            <button class="modal-close" @click="showPreview = false" aria-label="Close">✕</button>
-          </div>
-
-          <div class="modal-body">
-            <div class="preview-head">
-              <div>
-                <p class="company-label">Acme Corporation Ltd.</p>
-                <h2 class="preview-title serif">Petty Cash Voucher</h2>
-              </div>
-              <div class="preview-head__right">
-                <p class="mono-label tiny">Voucher No.</p>
-                <code class="voucher-no">{{ voucherNo }}</code>
-              </div>
-            </div>
-
-            <div class="preview-section">
-              <h3 class="preview-section__title mono-label">Email Details</h3>
-              <div class="preview-rows">
-                <div class="preview-row">
-                  <span>From</span><span>{{ form.from || '—' }}</span>
-                </div>
-                <div class="preview-row">
-                  <span>To</span><span>{{ form.to || '—' }}</span>
-                </div>
-                <div class="preview-row">
-                  <span>CC</span><span>{{ form.cc || '—' }}</span>
-                </div>
-                <div class="preview-row">
-                  <span>Subject</span><span>{{ form.subject || '—' }}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="preview-section">
-              <h3 class="preview-section__title mono-label">Payee Information</h3>
-              <div class="preview-rows">
-                <div class="preview-row">
-                  <span>Date</span><span>{{ form.date || '—' }}</span>
-                </div>
-                <div class="preview-row">
-                  <span>Payee</span><span>{{ form.payee || '—' }}</span>
-                </div>
-                <div class="preview-row">
-                  <span>Department</span><span>{{ form.department || '—' }}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="preview-section">
-              <h3 class="preview-section__title mono-label">Amount &amp; Purpose</h3>
-              <div class="preview-rows">
-                <div class="preview-row">
-                  <span>Amount (Figures)</span>
-                  <span class="mono-input">${{ parsedAmount.toFixed(2) }}</span>
-                </div>
-                <div class="preview-row">
-                  <span>Amount (Words)</span><span>{{ form.amountWords || '—' }}</span>
-                </div>
-                <div class="preview-row block-row">
-                  <span>Purpose</span>
-                  <span>{{ form.purpose || '—' }}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="preview-section">
-              <h3 class="preview-section__title mono-label">Supporting Documents</h3>
-              <div class="preview-rows">
-                <div class="preview-row">
-                  <span>Submission Date</span>
-                  <span>{{ form.submissionDate || '—' }}</span>
-                </div>
-                <div class="preview-row">
-                  <span>Attached Files</span>
-                  <span>{{
-                    form.supportingDocs.length
-                      ? form.supportingDocs.map((f) => f.name).join(', ')
-                      : 'None'
-                  }}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="amount-banner">
-              <span class="mono-label">Total Amount</span>
-              <span class="amount-total serif">${{ parsedAmount.toFixed(2) }}</span>
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button class="btn btn-outline" @click="showPreview = false">Back to Edit</button>
-            <button class="btn btn-primary" @click="sendVoucher">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <line x1="22" y1="2" x2="11" y2="13" />
-                <polygon points="22 2 15 22 11 13 2 9 22 2" />
-              </svg>
-              Send Voucher
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <Modal
+      v-model="showPreview"
+      :form="form"
+      :voucher-no="voucherNo"
+      :parsed-amount="parsedAmount"
+      :user-email="userEmail"
+      @submit="submitVoucher"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import Modal from './modal.vue'
+import { addVoucher, userEmail } from './stores/appState'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const STEPS = ['Email Details', 'Payee Info', 'Amount & Purpose', 'Documents & Review']
@@ -541,29 +419,69 @@ const tensArr = [
   'Ninety',
 ]
 
-function belowThousand(n) {
+function belowThousand(n, includeAnd = false) {
   if (n === 0) return ''
-  if (n < 20) return ones[n] + ' '
-  if (n < 100) return tensArr[Math.floor(n / 10)] + (n % 10 ? '-' + ones[n % 10] : '') + ' '
-  return ones[Math.floor(n / 100)] + ' Hundred ' + belowThousand(n % 100)
+  if (n < 20) return ones[n]
+  if (n < 100) {
+    const tens = tensArr[Math.floor(n / 10)]
+    const rest = n % 10 ? `-${ones[n % 10]}` : ''
+    return tens + rest
+  }
+
+  const hundredPart = `${ones[Math.floor(n / 100)]} Hundred`
+  const remainder = n % 100
+  if (remainder === 0) return hundredPart
+  return includeAnd
+    ? `${hundredPart} and ${belowThousand(remainder)}`
+    : `${hundredPart} ${belowThousand(remainder)}`
 }
 
 function numberToWords(amount) {
   if (isNaN(amount) || amount <= 0) return ''
-  const dollars = Math.floor(amount)
-  const cents = Math.round((amount - dollars) * 100)
-  const chunks = [
-    { val: Math.floor(dollars / 1_000_000), label: 'Million' },
-    { val: Math.floor((dollars % 1_000_000) / 1_000), label: 'Thousand' },
-    { val: dollars % 1_000, label: '' },
+
+  const naira = Math.floor(amount)
+  const kobo = Math.round((amount - naira) * 100)
+  const hasNaira = naira > 0
+  const hasKobo = kobo > 0
+
+  if (!hasNaira && hasKobo) {
+    return `${belowThousand(kobo).trim()} Kobo Only`
+  }
+
+  const scales = [
+    { value: 1_000_000_000_000, label: 'Trillion' },
+    { value: 1_000_000_000, label: 'Billion' },
+    { value: 1_000_000, label: 'Million' },
+    { value: 1_000, label: 'Thousand' },
   ]
+
+  let remaining = naira
+  const chunks = []
+
+  for (const scale of scales) {
+    const value = Math.floor(remaining / scale.value)
+    if (value > 0) {
+      chunks.push({ val: value, label: scale.label })
+    }
+    remaining %= scale.value
+  }
+
+  if (remaining > 0) {
+    chunks.push({ val: remaining, label: '' })
+  }
+
   let words = chunks
     .filter((c) => c.val > 0)
-    .map((c) => belowThousand(c.val) + c.label)
-    .join(' ')
+    .map((c) => {
+      const chunkWords = belowThousand(c.val, true).trim()
+      return chunkWords ? `${chunkWords} ${c.label}`.trim() : ''
+    })
+    .filter(Boolean)
+    .join(', ')
     .trim()
-  words += ' Dollar' + (dollars !== 1 ? 's' : '')
-  if (cents > 0) words += ' and ' + belowThousand(cents).trim() + ' Cent' + (cents !== 1 ? 's' : '')
+
+  words += ' Naira'
+  if (hasKobo) words += ' and ' + belowThousand(kobo).trim() + ' Kobo'
   return words + ' Only'
 }
 
@@ -594,13 +512,12 @@ function isEmail(v) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
 }
 
-// ─── State ────────────────────────────────────────────────────────────────────
+const router = useRouter()
 const voucherSerial = ref(makeSerial())
 const step = ref(0)
 const showPreview = ref(false)
 const submitted = ref(false)
 const lastVoucherNo = ref('')
-const fileInput = ref(null)
 
 const form = reactive({
   from: '',
@@ -619,16 +536,12 @@ const form = reactive({
 
 const errors = reactive({})
 
-// ─── Computed ─────────────────────────────────────────────────────────────────
 const deptSlug = computed(() => form.department.trim().toUpperCase().replace(/\s+/g, '-') || 'DEPT')
-
 const voucherNo = computed(
   () => `PCV/${deptSlug.value}/${currentYear()}/${currentMonth()}/${voucherSerial.value}`,
 )
-
 const parsedAmount = computed(() => parseFloat(form.amountFigures) || 0)
 
-// ─── Watchers ─────────────────────────────────────────────────────────────────
 watch(
   () => form.department,
   (dept) => {
@@ -637,7 +550,6 @@ watch(
     }
   },
 )
-
 watch(
   () => form.amountFigures,
   (val) => {
@@ -645,7 +557,6 @@ watch(
   },
 )
 
-// ─── Validation ───────────────────────────────────────────────────────────────
 const validators = {
   0() {
     const e = {}
@@ -687,87 +598,45 @@ function validate() {
 function clearErr(key) {
   delete errors[key]
 }
-
-// ─── Navigation ───────────────────────────────────────────────────────────────
 function next() {
   if (validate()) step.value = Math.min(step.value + 1, STEPS.length - 1)
 }
-
 function back() {
   Object.keys(errors).forEach((k) => delete errors[k])
   step.value = Math.max(step.value - 1, 0)
 }
-
 function openPreview() {
   if (validate()) showPreview.value = true
 }
-
-// ─── File handling ────────────────────────────────────────────────────────────
 function handleFiles(e) {
   form.supportingDocs.push(...Array.from(e.target.files ?? []))
   e.target.value = ''
 }
-
 function removeFile(i) {
   form.supportingDocs.splice(i, 1)
 }
 
-// ─── Email build & send ───────────────────────────────────────────────────────
-function buildBody() {
-  const docs = form.supportingDocs.length
-    ? form.supportingDocs.map((f) => `  • ${f.name}`).join('\n')
-    : '  None attached'
-  return `PETTY CASH VOUCHER
-${'═'.repeat(52)}
-Voucher No.:      ${voucherNo.value}
-Company:          Acme Corporation Ltd.
+function submitVoucher() {
+  const entry = {
+    id: voucherNo.value,
+    submittedBy: userEmail.value,
+    date: form.date,
+    submissionDate: form.submissionDate,
+    payee: form.payee,
+    department: form.department,
+    amount: parsedAmount.value,
+    purpose: form.purpose,
+    from: form.from,
+    to: form.to,
+  }
 
-EMAIL DETAILS
-${'─'.repeat(52)}
-From:             ${form.from}
-To:               ${form.to}
-CC:               ${form.cc}
-Subject:          ${form.subject}
-
-PAYEE INFORMATION
-${'─'.repeat(52)}
-Date:             ${form.date}
-Payee:            ${form.payee}
-Department:       ${form.department}
-
-AMOUNT & PURPOSE
-${'─'.repeat(52)}
-Amount (Figures): $${parsedAmount.value.toFixed(2)}
-Amount (Words):   ${form.amountWords}
-
-Purpose / Description:
-${form.purpose}
-
-SUPPORTING DOCUMENTS
-${'─'.repeat(52)}
-Submission Date:  ${form.submissionDate}
-Attached Files:
-${docs}
-
-${'═'.repeat(52)}
-This voucher was generated by the Petty Cash Voucher System.
-Submitted by: ${form.from}`
-}
-
-function sendVoucher() {
-  const url = [
-    `mailto:${encodeURIComponent(form.to)}`,
-    `?subject=${encodeURIComponent(form.subject)}`,
-    `&cc=${encodeURIComponent(form.cc)}`,
-    `&body=${encodeURIComponent(buildBody())}`,
-  ].join('')
-  window.location.href = url
+  addVoucher(entry)
   lastVoucherNo.value = voucherNo.value
   showPreview.value = false
   submitted.value = true
 }
 
-function reset() {
+function resetForm() {
   Object.assign(form, {
     from: '',
     to: '',
