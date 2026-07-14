@@ -29,7 +29,7 @@
         <div class="sidebar__avatar">{{ userInitial }}</div>
         <div class="sidebar__user-info">
           <p class="sidebar__user-email">{{ userEmail }}</p>
-          <p class="sidebar__user-role">Signed in</p>
+          <p class="sidebar__user-role">{{ isAdmin ? 'Administrator' : 'Signed in' }}</p>
         </div>
       </div>
 
@@ -83,32 +83,34 @@
       </nav>
 
       <div class="sidebar__footer">
-        <router-link
-          class="sidebar__nav-item sidebar__admin-btn"
-          :class="{ active: route.name === 'admin' }"
-          :to="{ name: 'admin' }"
-          @click="sidebarOpen = false"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
+        <template v-if="isAdmin">
+          <router-link
+            class="sidebar__nav-item sidebar__admin-btn"
+            :class="{ active: route.name === 'admin' }"
+            :to="{ name: 'admin' }"
+            @click="sidebarOpen = false"
           >
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-          </svg>
-          Admin Panel
-          <span v-if="allVouchers.length" class="sidebar__badge sidebar__badge--admin">{{
-            allVouchers.length
-          }}</span>
-        </router-link>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="4" rx="1" />
+              <rect x="14" y="11" width="7" height="10" rx="1" />
+              <rect x="3" y="13" width="7" height="8" rx="1" />
+            </svg>
+            Dashboard
+            <span v-if="allVouchers.length" class="sidebar__badge sidebar__badge--admin">{{
+              allVouchers.length
+            }}</span>
+          </router-link>
 
-        <div class="sidebar__divider"></div>
+          <div class="sidebar__divider"></div>
+        </template>
 
         <button class="sidebar__logout" @click="handleLogout">
           <svg
@@ -133,7 +135,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { allVouchers, logoutUser, userEmail } from './stores/appState'
+import { allVouchers, isAdmin, logoutUser, userEmail } from './stores/appState'
 
 const route = useRoute()
 const router = useRouter()

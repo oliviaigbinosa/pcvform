@@ -26,6 +26,7 @@
             type="email"
             placeholder="yourname@getpayedmail.com"
             :class="{ error: loginErrors.email }"
+            :disabled="loggingIn"
             @input="delete loginErrors.email"
           />
           <span v-if="loginErrors.email" class="err-msg">{{ loginErrors.email }}</span>
@@ -39,6 +40,7 @@
               :type="showPassword ? 'text' : 'password'"
               placeholder="Enter your password"
               :class="{ error: loginErrors.password }"
+              :disabled="loggingIn"
               @input="delete loginErrors.password"
             />
             <button
@@ -79,9 +81,14 @@
           <span v-if="loginErrors.password" class="err-msg">{{ loginErrors.password }}</span>
         </div>
 
-        <button type="submit" class="btn btn-primary login-submit">
-          Sign In
+        <span v-if="loginErrors.general" class="err-msg login-general-error">{{
+          loginErrors.general
+        }}</span>
+
+        <button type="submit" class="btn btn-primary login-submit" :disabled="loggingIn">
+          {{ loggingIn ? 'Signing in…' : 'Sign In' }}
           <svg
+            v-if="!loggingIn"
             width="15"
             height="15"
             viewBox="0 0 24 24"
@@ -109,6 +116,7 @@ function isLoginEmail(v) {
 }
 
 const showPassword = ref(false)
+const loggingIn = ref(false)
 const loginForm = reactive({ email: '', password: '' })
 const loginErrors = reactive({})
 
@@ -116,15 +124,40 @@ onMounted(() => {
   if (isLoggedIn.value) router.replace({ name: 'form' })
 })
 
-function handleLogin() {
+async function handleLogin() {
   delete loginErrors.email
   delete loginErrors.password
-  if (!isLoginEmail(loginForm.email))
+  delete loginErrors.general
+
+  if (!isLoginEmail(loginForm.email)) {
     loginErrors.email = 'Email must be a @getpayedmail.com address'
-  if (loginForm.password.length < 6) loginErrors.password = 'Password must be at least 6 characters'
+  }
+
   if (Object.keys(loginErrors).length) return
 
-  loginUser(loginForm.email)
-  router.replace({ name: 'form' })
+  loggingIn.value = true
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: loginForm.email,
+        password: loginForm.password,
+      }),
+    })
+
+    const data = await res.json()
+    if (!res.ok) {
+      loginErrors.general = data.error || 'Login failed'
+      return
+    }
+
+    loginUser(data.email, data.role)
+    router.replace(data.role === 'admin' ? { name: 'admin' } : { name: 'form' })
+  } catch {
+    loginErrors.general = 'Could not reach the server. Make sure the backend is running.'
+  } finally {
+    loggingIn.value = false
+  }
 }
 </script>

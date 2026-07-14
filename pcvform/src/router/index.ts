@@ -3,7 +3,7 @@ import Admin from '../admin.vue'
 import Signup from '../signup.vue'
 import Voucher from '../voucher.vue'
 import VoucherForm from '../voucherform.vue'
-import { isLoggedIn } from '../stores/appState'
+import { isAdmin, isLoggedIn } from '../stores/appState'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -26,6 +26,11 @@ router.beforeEach((to, _from, next) => {
   }
 
   if (to.name === 'login' && isLoggedIn.value) {
+    next({ name: isAdmin.value ? 'admin' : 'form' })
+    return
+  }
+
+  if (to.name === 'admin' && !isAdmin.value) {
     next({ name: 'form' })
     return
   }

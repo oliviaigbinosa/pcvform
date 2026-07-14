@@ -1374,6 +1374,117 @@ textarea {
   max-width: 160px;
 }
 
+/* ── Dashboard tabs ─────────────────────────────────────────── */
+.dashboard-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  padding: 4px;
+  background: var(--muted);
+  border-radius: var(--radius);
+  width: fit-content;
+}
+
+.dashboard-tabs__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted-fg);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.dashboard-tabs__tab:hover {
+  color: var(--fg);
+}
+
+.dashboard-tabs__tab.active {
+  background: var(--card);
+  color: var(--fg);
+  box-shadow: 0 1px 3px rgba(26, 22, 18, 0.08);
+}
+
+.dashboard-tabs__badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+}
+
+.dashboard-tabs__tab.active .dashboard-tabs__badge {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+}
+
+/* ── User Onboarding ────────────────────────────────────────── */
+.onboarding-form {
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.onboarding-form__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--fg);
+  margin-bottom: 4px;
+}
+
+.onboarding-form__sub {
+  font-size: 13px;
+  color: var(--muted-fg);
+  margin-bottom: 20px;
+}
+
+.onboarding-form__fields {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.onboarding-field {
+  flex: 1;
+  min-width: 200px;
+}
+
+.onboarding-submit {
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
+.onboarding-remove-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.onboarding-active-label {
+  font-size: 13px;
+}
+
+.status-badge--active {
+  background: color-mix(in srgb, #16a34a 12%, transparent);
+  color: #16a34a;
+  border-color: color-mix(in srgb, #16a34a 25%, transparent);
+}
+
+.status-badge--pending {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (min-width: 520px) {
   .stepper__label {
