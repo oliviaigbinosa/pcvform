@@ -1,5 +1,7 @@
 import { computed, ref } from 'vue'
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+
 const userEmail = ref(sessionStorage.getItem('pcv_user') || '')
 const userRole = ref(sessionStorage.getItem('pcv_role') || '')
 const isLoggedIn = ref(Boolean(userEmail.value))
@@ -28,7 +30,7 @@ function logoutUser() {
 async function fetchVouchers() {
   loadingVouchers.value = true
   try {
-    const res = await fetch('/api/vouchers')
+    const res = await fetch(`${API_BASE}/api/vouchers`)
     if (!res.ok) {
       throw new Error('Failed to fetch vouchers')
     }
@@ -39,7 +41,7 @@ async function fetchVouchers() {
 }
 
 async function addVoucher(entry: Record<string, unknown>) {
-  const res = await fetch('/api/vouchers', {
+  const res = await fetch(`${API_BASE}/api/vouchers`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(entry),
@@ -52,7 +54,7 @@ async function addVoucher(entry: Record<string, unknown>) {
 }
 
 async function updateVoucherStatus(id: string, status: string) {
-  const res = await fetch(`/api/vouchers/${encodeURIComponent(id)}/status`, {
+  const res = await fetch(`${API_BASE}/api/vouchers/${encodeURIComponent(id)}/status`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status }),
@@ -76,7 +78,7 @@ type OnboardingUser = {
 const onboardingUsers = ref<OnboardingUser[]>([])
 
 async function fetchOnboardingUsers() {
-  const res = await fetch('/api/admin/users')
+  const res = await fetch(`${API_BASE}/api/admin/users`)
   if (!res.ok) {
     throw new Error('Failed to load users')
   }
@@ -84,7 +86,7 @@ async function fetchOnboardingUsers() {
 }
 
 async function addOnboardingUser(email: string, password: string, createdBy?: string) {
-  const res = await fetch('/api/admin/users', {
+  const res = await fetch(`${API_BASE}/api/admin/users`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password, createdBy }),
@@ -97,7 +99,7 @@ async function addOnboardingUser(email: string, password: string, createdBy?: st
 }
 
 async function removeOnboardingUser(id: string) {
-  const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' })
+  const res = await fetch(`${API_BASE}/api/admin/users/${id}`, { method: 'DELETE' })
   if (!res.ok) {
     const data = await res.json()
     throw new Error(data.error || 'Failed to remove user')
@@ -106,7 +108,7 @@ async function removeOnboardingUser(id: string) {
 }
 
 async function changePassword(email: string, currentPassword: string, newPassword: string) {
-  const res = await fetch('/api/auth/change-password', {
+  const res = await fetch(`${API_BASE}/api/auth/change-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, currentPassword, newPassword }),
@@ -118,7 +120,7 @@ async function changePassword(email: string, currentPassword: string, newPasswor
 }
 
 async function sendInviteEmail(email: string, password: string, from?: string) {
-  const res = await fetch('/api/email/send-invite', {
+  const res = await fetch(`${API_BASE}/api/email/send-invite`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ to: email, password, from }),
