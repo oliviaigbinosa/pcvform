@@ -29,12 +29,35 @@
         <div class="sidebar__avatar">{{ userInitial }}</div>
         <div class="sidebar__user-info">
           <p class="sidebar__user-email">{{ userEmail }}</p>
-          <p class="sidebar__user-role">{{ isAdmin ? 'Administrator' : 'Signed in' }}</p>
+          <p v-if="isAdmin" class="sidebar__user-role">Administrator</p>
         </div>
       </div>
 
       <nav class="sidebar__nav">
-        <p class="sidebar__nav-group">Navigation</p>
+        <div class="sidebar__nav-head">
+          <p class="sidebar__nav-group">Navigation</p>
+          <router-link
+            class="sidebar__settings-btn"
+            :class="{ active: route.name === 'settings' }"
+            :to="{ name: 'settings' }"
+            aria-label="Settings"
+            @click="sidebarOpen = false"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+              />
+            </svg>
+          </router-link>
+        </div>
         <router-link
           class="sidebar__nav-item"
           :class="{ active: route.name === 'form' }"
@@ -78,39 +101,32 @@
             <line x1="3" y1="18" x2="3.01" y2="18" />
           </svg>
           Vouchers
-          <span v-if="myVouchers.length" class="sidebar__badge">{{ myVouchers.length }}</span>
+        </router-link>
+        <router-link
+          v-if="isAdmin"
+          class="sidebar__nav-item"
+          :class="{ active: route.name === 'admin' }"
+          :to="{ name: 'admin' }"
+          @click="sidebarOpen = false"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          Admin Panel
         </router-link>
       </nav>
 
       <div class="sidebar__footer">
-        <template v-if="isAdmin">
-          <router-link
-            class="sidebar__nav-item sidebar__admin-btn"
-            :class="{ active: route.name === 'admin' }"
-            :to="{ name: 'admin' }"
-            @click="sidebarOpen = false"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <rect x="3" y="3" width="7" height="7" rx="1" />
-              <rect x="14" y="3" width="7" height="4" rx="1" />
-              <rect x="14" y="11" width="7" height="10" rx="1" />
-              <rect x="3" y="13" width="7" height="8" rx="1" />
-            </svg>
-            Dashboard
-            <span v-if="allVouchers.length" class="sidebar__badge sidebar__badge--admin">{{
-              allVouchers.length
-            }}</span>
-          </router-link>
-
-          <div class="sidebar__divider"></div>
-        </template>
 
         <button class="sidebar__logout" @click="handleLogout">
           <svg

@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Admin from '../admin.vue'
+import Approve from '../approve.vue'
+import Settings from '../settings.vue'
 import Signup from '../signup.vue'
 import Voucher from '../voucher.vue'
 import VoucherForm from '../voucherform.vue'
@@ -12,30 +14,29 @@ const router = createRouter({
     { path: '/login', name: 'login', component: Signup },
     { path: '/form', name: 'form', component: VoucherForm },
     { path: '/vouchers', name: 'vouchers', component: Voucher },
+    { path: '/approve', name: 'approve', component: Approve },
+    { path: '/settings', name: 'settings', component: Settings },
     { path: '/admin', name: 'admin', component: Admin },
   ],
 })
 
-router.beforeEach((to, _from, next) => {
-  const publicRoutes = ['login']
+router.beforeEach((to, _from) => {
+  const publicRoutes = ['login', 'approve']
   const requiresAuth = !publicRoutes.includes(String(to.name))
 
   if (requiresAuth && !isLoggedIn.value) {
-    next({ name: 'login' })
-    return
+    return { name: 'login' }
   }
 
   if (to.name === 'login' && isLoggedIn.value) {
-    next({ name: isAdmin.value ? 'admin' : 'form' })
-    return
+    return { name: isAdmin.value ? 'admin' : 'form' }
   }
 
   if (to.name === 'admin' && !isAdmin.value) {
-    next({ name: 'form' })
-    return
+    return { name: 'form' }
   }
 
-  next()
+  return true
 })
 
 export default router

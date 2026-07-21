@@ -53,9 +53,6 @@
           <h3 class="preview-section__title mono-label">Payee Information</h3>
           <div class="preview-rows">
             <div class="preview-row">
-              <span>Date</span><span>{{ form.date || '—' }}</span>
-            </div>
-            <div class="preview-row">
               <span>Payee</span><span>{{ form.payee || '—' }}</span>
             </div>
             <div class="preview-row">
@@ -69,7 +66,7 @@
           <div class="preview-rows">
             <div class="preview-row">
               <span>Amount (Figures)</span>
-              <span class="mono-input">₦{{ parsedAmount.toFixed(2) }}</span>
+              <span class="mono-input">₦{{ formattedAmount }}</span>
             </div>
             <div class="preview-row">
               <span>Amount (Words)</span><span>{{ form.amountWords || '—' }}</span>
@@ -88,24 +85,31 @@
             </div>
             <div class="preview-row">
               <span>Attached Files</span>
-              <span>{{
-                form.supportingDocs.length
-                  ? form.supportingDocs.map((f) => f.name).join(', ')
-                  : 'None'
-              }}</span>
+              <span>
+                <template v-if="form.supportingDocs.length">
+                  <span v-for="(file, i) in form.supportingDocs" :key="i">
+                    <a
+                      class="file-link"
+                      href="#"
+                      @click.prevent="openFilePreview(file)"
+                    >{{ file.name }}</a>{{ i < form.supportingDocs.length - 1 ? ', ' : '' }}
+                  </span>
+                </template>
+                <template v-else>None</template>
+              </span>
             </div>
           </div>
         </div>
 
         <div class="amount-banner">
           <span class="mono-label">Total Amount</span>
-          <span class="amount-total serif">₦{{ parsedAmount.toFixed(2) }}</span>
+          <span class="amount-total serif">₦{{ formattedAmount }}</span>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button class="btn btn-outline" @click="closeModal">Back to Edit</button>
-        <button class="btn btn-primary" @click="sendVoucher">
+        <button class="btn btn-outline" :disabled="sending" @click="closeModal">Back to Edit</button>
+        <button class="btn btn-primary" :disabled="sending" @click="sendVoucher">
           <svg
             width="14"
             height="14"
@@ -122,10 +126,12 @@
       </div>
     </div>
   </div>
+  <FilePreview :show="showFilePreview" :file="previewFile" @close="showFilePreview = false" />
 </template>
 
 <script setup>
-import { onBeforeUnmount, ref } from 'vue'
+import { ref } from 'vue'
+import FilePreview from './FilePreview.vue'
 
 const props = defineProps({
   modelValue: {
@@ -144,6 +150,10 @@ const props = defineProps({
     type: Number,
     required: true,
   },
+  formattedAmount: {
+    type: String,
+    required: true,
+  },
   userEmail: {
     type: String,
     default: '',
@@ -151,71 +161,64 @@ const props = defineProps({
 })
 const emit = defineEmits(['submit', 'update:modelValue'])
 
-const pendingSubmission = ref(false)
+const sending = ref(false)
+const showFilePreview = ref(false)
+const previewFile = ref(null)
 
 function closeModal() {
   emit('update:modelValue', false)
 }
 
-function cleanupListeners() {
-  window.removeEventListener('focus', handleReturnToApp)
-  document.removeEventListener('visibilitychange', handleReturnToApp)
+function openFilePreview(file) {
+  previewFile.value = file
+  showFilePreview.value = true
 }
 
-function completeSubmission() {
-  if (!pendingSubmission.value) {
+async function sendVoucher() {
+  if (sending.value) {
     return
   }
 
-  cleanupListeners()
-  pendingSubmission.value = false
-  emit('submit')
-  closeModal()
-}
+  sending.value = true
 
-function handleReturnToApp() {
-  if (pendingSubmission.value && (document.visibilityState === 'visible' || document.hasFocus())) {
-    completeSubmission()
-  }
-}
-
-function sendVoucher() {
-  if (pendingSubmission.value) {
-    return
-  }
-
-  pendingSubmission.value = true
-  window.addEventListener('focus', handleReturnToApp)
-  document.addEventListener('visibilitychange', handleReturnToApp)
-
-  const mailto = [
-    `mailto:${encodeURIComponent(props.form.to)}`,
-    `?subject=${encodeURIComponent(props.form.subject)}`,
-    `&cc=${encodeURIComponent(props.form.cc)}`,
-    `&reply-to=${encodeURIComponent(props.form.from)}`,
-    `&body=${encodeURIComponent(buildBody())}`,
-  ].join('')
+  const approvalLink = `${window.location.origin}/approve?id=${encodeURIComponent(props.voucherNo)}`
 
   try {
-    window.location.href = mailto
+    const res = await fetch('/api/email/send-voucher', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        voucherNo: props.voucherNo,
+        from: props.form.from,
+        to: props.form.to,
+        cc: props.form.cc,
+        subject: props.form.subject,
+        payee: props.form.payee,
+        department: props.form.department,
+        amount: props.parsedAmount,
+        amountWords: props.form.amountWords,
+        purpose: props.form.purpose,
+        submissionDate: props.form.submissionDate,
+        supportingDocs: props.form.supportingDocs.map((f) => ({
+          name: f.name,
+          type: f.type,
+          data: f.data,
+        })),
+        submittedBy: props.userEmail,
+        approvalLink,
+      }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to send voucher email')
+    }
+    emit('submit')
+    closeModal()
   } catch (error) {
-    cleanupListeners()
-    pendingSubmission.value = false
-    console.error('Voucher email launch failed', error)
-    window.alert(
-      'We could not open your mail service. Please copy the voucher details manually and try again.',
-    )
+    console.error('Voucher email send failed', error)
+    window.alert(error instanceof Error ? error.message : 'Failed to send voucher email')
+  } finally {
+    sending.value = false
   }
-}
-
-onBeforeUnmount(() => {
-  cleanupListeners()
-})
-
-function buildBody() {
-  const docs = props.form.supportingDocs.length
-    ? props.form.supportingDocs.map((f) => `  • ${f.name}`).join('\n')
-    : '  None attached'
-  return `PETTY CASH VOUCHER\n${'═'.repeat(52)}\nVoucher No.:      ${props.voucherNo}\nCompany:          Getpayed Technology Solutions Ltd.\nSubmitted By:     ${props.userEmail}\n\nEMAIL DETAILS\n${'─'.repeat(52)}\nFrom:             ${props.form.from}\nTo:               ${props.form.to}\nCC:               ${props.form.cc}\nSubject:          ${props.form.subject}\n\nPAYEE INFORMATION\n${'─'.repeat(52)}\nDate:             ${props.form.date}\nPayee:            ${props.form.payee}\nDepartment:       ${props.form.department}\n\nAMOUNT & PURPOSE\n${'─'.repeat(52)}\nAmount (Figures): ₦${props.parsedAmount.toFixed(2)}\nAmount (Words):   ${props.form.amountWords}\n\nPurpose / Description:\n${props.form.purpose}\n\nSUPPORTING DOCUMENTS\n${'─'.repeat(52)}\nSubmission Date:  ${props.form.submissionDate}\nAttached Files:\n${docs}\n\n${'═'.repeat(52)}\nThis voucher was generated by the Petty Cash Voucher System.`
 }
 </script>

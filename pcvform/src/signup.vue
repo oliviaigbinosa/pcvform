@@ -20,11 +20,11 @@
 
       <form class="login-form" @submit.prevent="handleLogin" novalidate>
         <div class="field">
-          <label class="mono-label">Email Address <span class="req">*</span></label>
+          <label class="mono-label">Email Address </label>
           <input
             v-model="loginForm.email"
             type="email"
-            placeholder="yourname@getpayedmail.com"
+            placeholder="user@getpayedmail.com"
             :class="{ error: loginErrors.email }"
             :disabled="loggingIn"
             @input="delete loginErrors.email"
@@ -33,7 +33,7 @@
         </div>
 
         <div class="field">
-          <label class="mono-label">Password <span class="req">*</span></label>
+          <label class="mono-label">Password </label>
           <div class="pwd-wrap">
             <input
               v-model="loginForm.password"
@@ -85,20 +85,7 @@
           loginErrors.general
         }}</span>
 
-        <button type="submit" class="btn btn-primary login-submit" :disabled="loggingIn">
-          {{ loggingIn ? 'Signing in…' : 'Sign In' }}
-          <svg
-            v-if="!loggingIn"
-            width="15"
-            height="15"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
-        </button>
+        <button type="submit" class="btn btn-primary login-submit">Sign in</button>
       </form>
     </div>
   </div>
@@ -131,6 +118,9 @@ async function handleLogin() {
 
   if (!isLoginEmail(loginForm.email)) {
     loginErrors.email = 'Email must be a @getpayedmail.com address'
+  }
+  if (!loginForm.password) {
+    loginErrors.password = 'Password is required'
   }
 
   if (Object.keys(loginErrors).length) return

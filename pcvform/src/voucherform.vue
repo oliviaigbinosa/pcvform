@@ -4,7 +4,7 @@
     <div v-if="submitted" class="card success-card">
       <div class="success-icon">✓</div>
       <h2 class="serif">Voucher Submitted</h2>
-      <p>Your email client opened with the voucher pre-filled and ready to send.</p>
+      <p>Your voucher has been sent by email.</p>
       <code class="voucher-badge">{{ lastVoucherNo }}</code>
       <div class="success-actions">
         <button class="btn btn-outline" @click="router.push({ name: 'vouchers' })">
@@ -85,33 +85,39 @@
           </div>
           <div class="fields">
             <div class="field">
-              <label class="mono-label">From (Sender Email) <span class="req">*</span></label>
+              <label class="mono-label">From (Sender Email) </label>
               <input
                 v-model="form.from"
                 type="email"
-                placeholder="yourname@gmail.com"
-                :class="{ error: errors.from }"
-                @input="clearErr('from')"
+                placeholder="your-name@getpayedmail.com"
+                readonly
               />
-              <span v-if="errors.from" class="err-msg">{{ errors.from }}</span>
             </div>
             <div class="field">
-              <label class="mono-label">To (Recipient Email) <span class="req">*</span></label>
-              <input
+              <label class="mono-label">To (Recipient Email) </label>
+              <select
                 v-model="form.to"
-                type="email"
-                placeholder="recipientname@gmail.com"
                 :class="{ error: errors.to }"
-                @input="clearErr('to')"
-              />
+                @change="clearErr('to')"
+              >
+                <option value="">Select recipient</option>
+                <option v-for="user in onboardingUsers" :key="user.id" :value="user.email">
+                  {{ user.email }}
+                </option>
+              </select>
               <span v-if="errors.to" class="err-msg">{{ errors.to }}</span>
             </div>
             <div class="field">
-              <label class="mono-label">CC</label>
-              <input v-model="form.cc" type="email" placeholder="finance@gmail.com" />
+              <label class="mono-label">CC (notified on approval)</label>
+              <input
+                v-model="form.cc"
+                type="email"
+                placeholder="olivia.igbinosa@getpayedmail.com"
+                readonly
+              />
             </div>
             <div class="field">
-              <label class="mono-label">Subject <span class="req">*</span></label>
+              <label class="mono-label">Subject </label>
               <input
                 v-model="form.subject"
                 type="text"
@@ -143,21 +149,11 @@
           </div>
           <div class="fields">
             <div class="field">
-              <label class="mono-label">Date <span class="req">*</span></label>
-              <input
-                v-model="form.date"
-                type="date"
-                :class="{ error: errors.date }"
-                @change="clearErr('date')"
-              />
-              <span v-if="errors.date" class="err-msg">{{ errors.date }}</span>
-            </div>
-            <div class="field">
-              <label class="mono-label">Payee (Person / Vendor) <span class="req">*</span></label>
+              <label class="mono-label">Payee (Person / Vendor) </label>
               <input
                 v-model="form.payee"
                 type="text"
-                oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')"
+                oninput="this.value = this.value.replace(/[^A-Za-z\s.,;:!?'()&-]/g, '')"
                 placeholder="e.g. John Adeyemi / Staples Ltd."
                 :class="{ error: errors.payee }"
                 @input="clearErr('payee')"
@@ -165,7 +161,7 @@
               <span v-if="errors.payee" class="err-msg">{{ errors.payee }}</span>
             </div>
             <div class="field">
-              <label class="mono-label">Department <span class="req">*</span></label>
+              <label class="mono-label">Department </label>
               <input
                 v-model="form.department"
                 type="text"
@@ -187,15 +183,14 @@
           </div>
           <div class="fields">
             <div class="field">
-              <label class="mono-label">Amount in Figures (NGN) <span class="req">*</span></label>
+              <label class="mono-label">Amount in Figures (NGN) </label>
               <div class="input-prefix">
                 <span class="prefix">₦</span>
                 <input
-                  v-model="form.amountFigures"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  placeholder="0.00"
+                  v-model="displayAmount"
+                  type="text"
+                  inputmode="decimal"
+                  placeholder="0,000.00"
                   class="mono-input"
                   :class="{ error: errors.amountFigures }"
                   @input="clearErr('amountFigures')"
@@ -205,14 +200,14 @@
             </div>
             <div class="field">
               <label class="mono-label">Amount in Words</label>
-              <textarea v-model="form.amountWords" rows="2"></textarea>
+              <textarea v-model="form.amountWords" rows="2" readonly></textarea>
             </div>
             <div class="field">
-              <label class="mono-label">Purpose / Description <span class="req">*</span></label>
+              <label class="mono-label">Purpose / Description </label>
               <textarea
                 v-model="form.purpose"
                 rows="4"
-                oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')"
+                oninput="this.value = this.value.replace(/[^A-Za-z\s.,;:!?'()&-]/g, '')"
                 placeholder="Describe what this petty cash is for..."
                 :class="{ error: errors.purpose }"
                 @input="clearErr('purpose')"
@@ -241,10 +236,11 @@
           </div>
           <div class="fields">
             <div class="field">
-              <label class="mono-label">Submission Date <span class="req">*</span></label>
+              <label class="mono-label">Submission Date </label>
               <input
                 v-model="form.submissionDate"
                 type="date"
+                readonly
                 :class="{ error: errors.submissionDate }"
                 @change="clearErr('submissionDate')"
               />
@@ -287,7 +283,11 @@
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                     <polyline points="14 2 14 8 20 8" />
                   </svg>
-                  <span class="file-name">{{ file.name }}</span>
+                  <a
+                    class="file-name"
+                    href="#"
+                    @click.prevent="openFilePreview(file)"
+                  >{{ file.name }}</a>
                   <button
                     type="button"
                     class="file-remove"
@@ -368,17 +368,24 @@
       :form="form"
       :voucher-no="voucherNo"
       :parsed-amount="parsedAmount"
+      :formatted-amount="formattedAmount"
       :user-email="userEmail"
       @submit="submitVoucher"
+    />
+    <FilePreview
+      :show="showFilePreview"
+      :file="previewFile"
+      @close="showFilePreview = false"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Modal from './modal.vue'
-import { addVoucher, userEmail } from './stores/appState'
+import FilePreview from './FilePreview.vue'
+import { addVoucher, userEmail, onboardingUsers, fetchOnboardingUsers, allVouchers } from './stores/appState'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const STEPS = ['Email Details', 'Payee Info', 'Amount & Purpose', 'Documents & Review']
@@ -489,6 +496,27 @@ function numberToWords(amount) {
 function pad(n) {
   return String(n).padStart(2, '0')
 }
+function formatNumberWithCommas(num) {
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+function normalizeAmount(val) {
+  const raw = String(val ?? '').replace(/[^0-9.]/g, '')
+  const parts = raw.split('.')
+  if (parts.length === 1) return parts[0]
+  return `${parts[0]}.${parts.slice(1).join('').slice(0, 2)}`
+}
+function formatNumberInput(val) {
+  const normalized = normalizeAmount(val)
+  if (normalized === '') return ''
+  const dotIndex = normalized.indexOf('.')
+  if (dotIndex === -1) {
+    return parseInt(normalized || '0', 10).toLocaleString('en-US')
+  }
+  const int = normalized.slice(0, dotIndex)
+  const dec = normalized.slice(dotIndex + 1)
+  const formattedInt = parseInt(int || '0', 10).toLocaleString('en-US')
+  return `${formattedInt}.${dec}`
+}
 function currentYear() {
   return new Date().getFullYear()
 }
@@ -503,28 +531,39 @@ function monthName(m) {
   )
 }
 function todayStr() {
-  return new Date().toISOString().split('T')[0]
+  const d = new Date()
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 function makeSerial() {
-  return String(Math.floor(Math.random() * 900) + 100).padStart(3, '0')
+  const nextId = allVouchers.value.length + 1
+  return String(nextId).padStart(3, '0')
 }
 function isEmail(v) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
 }
 
 const router = useRouter()
-const voucherSerial = ref(makeSerial())
+const voucherSerial = computed(() => makeSerial())
 const step = ref(0)
 const showPreview = ref(false)
 const submitted = ref(false)
 const lastVoucherNo = ref('')
+const showFilePreview = ref(false)
+const previewFile = ref(null)
+
+onMounted(async () => {
+  try {
+    await fetchOnboardingUsers()
+  } catch {
+    // Silently fail - users can still manually enter email if needed
+  }
+})
 
 const form = reactive({
-  from: '',
+  from: userEmail.value,
   to: '',
-  cc: 'finance@gmail.com',
+  cc: 'olivia.igbinosa@getpayedmail.com',
   subject: '',
-  date: todayStr(),
   payee: '',
   department: '',
   amountFigures: '',
@@ -541,6 +580,15 @@ const voucherNo = computed(
   () => `PCV/${deptSlug.value}/${currentYear()}/${currentMonth()}/${voucherSerial.value}`,
 )
 const parsedAmount = computed(() => parseFloat(form.amountFigures) || 0)
+const formattedAmount = computed(() => formatNumberWithCommas(parsedAmount.value))
+const displayAmount = computed({
+  get() {
+    return formatNumberInput(form.amountFigures)
+  },
+  set(value) {
+    form.amountFigures = normalizeAmount(value)
+  },
+})
 
 watch(
   () => form.department,
@@ -560,14 +608,16 @@ watch(
 const validators = {
   0() {
     const e = {}
-    if (!isEmail(form.from)) e.from = 'Valid sender email required'
-    if (!isEmail(form.to)) e.to = 'Valid recipient email required'
+    if (!isEmail(form.to)) {
+      e.to = 'Valid recipient email required'
+    } else if (!form.to.endsWith('@getpayedmail.com')) {
+      e.to = 'Email must be a @getpayedmail.com address'
+    }
     if (!form.subject.trim()) e.subject = 'Subject is required'
     return e
   },
   1() {
     const e = {}
-    if (!form.date) e.date = 'Date is required'
     if (!form.payee.trim()) e.payee = 'Payee name is required'
     if (!form.department.trim()) e.department = 'Department is required'
     return e
@@ -608,29 +658,58 @@ function back() {
 function openPreview() {
   if (validate()) showPreview.value = true
 }
-function handleFiles(e) {
-  form.supportingDocs.push(...Array.from(e.target.files ?? []))
+function openFilePreview(file) {
+  previewFile.value = file
+  showFilePreview.value = true
+}
+async function handleFiles(e) {
+  const files = Array.from(e.target.files ?? [])
+  for (const file of files) {
+    const data = await readFileAsDataURL(file)
+    form.supportingDocs.push({
+      name: file.name,
+      type: file.type || 'application/octet-stream',
+      size: file.size,
+      data,
+    })
+  }
   e.target.value = ''
 }
 function removeFile(i) {
   form.supportingDocs.splice(i, 1)
 }
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+}
 
-function submitVoucher() {
+async function submitVoucher() {
   const entry = {
     id: voucherNo.value,
     submittedBy: userEmail.value,
-    date: form.date,
     submissionDate: form.submissionDate,
     payee: form.payee,
     department: form.department,
     amount: parsedAmount.value,
+    amountWords: form.amountWords,
     purpose: form.purpose,
     from: form.from,
     to: form.to,
+    cc: form.cc,
+    subject: form.subject,
+    supportingDocs: form.supportingDocs.map((f) => ({
+      name: f.name,
+      type: f.type,
+      size: f.size,
+      data: f.data,
+    })),
   }
 
-  addVoucher(entry)
+  await addVoucher(entry)
   lastVoucherNo.value = voucherNo.value
   showPreview.value = false
   submitted.value = true
@@ -638,11 +717,10 @@ function submitVoucher() {
 
 function resetForm() {
   Object.assign(form, {
-    from: '',
+    from: userEmail.value,
     to: '',
-    cc: 'finance@gmail.com',
+    cc: 'olivia.igbinosa@getpayedmail.com',
     subject: '',
-    date: todayStr(),
     payee: '',
     department: '',
     amountFigures: '',
@@ -651,7 +729,6 @@ function resetForm() {
     supportingDocs: [],
     submissionDate: todayStr(),
   })
-  voucherSerial.value = makeSerial()
   step.value = 0
   submitted.value = false
   Object.keys(errors).forEach((k) => delete errors[k])

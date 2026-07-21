@@ -1,18 +1,11 @@
 import { computed, ref } from 'vue'
 
-function loadVouchers() {
-  try {
-    return JSON.parse(localStorage.getItem('pcv_vouchers') || '[]')
-  } catch {
-    return []
-  }
-}
-
 const userEmail = ref(sessionStorage.getItem('pcv_user') || '')
 const userRole = ref(sessionStorage.getItem('pcv_role') || '')
 const isLoggedIn = ref(Boolean(userEmail.value))
 const isAdmin = computed(() => userRole.value === 'admin')
-const allVouchers = ref(loadVouchers())
+const allVouchers = ref<any[]>([])
+const loadingVouchers = ref(true)
 
 function loginUser(email: string, role = 'user') {
   userEmail.value = email
@@ -32,54 +25,126 @@ function logoutUser() {
   sessionStorage.removeItem('pcv_role')
 }
 
-function addVoucher(entry: Record<string, unknown>) {
-  allVouchers.value = [...allVouchers.value, entry]
-  localStorage.setItem('pcv_vouchers', JSON.stringify(allVouchers.value))
+async function fetchVouchers() {
+  loadingVouchers.value = true
+  try {
+    const res = await fetch('/api/vouchers')
+    if (!res.ok) {
+      throw new Error('Failed to fetch vouchers')
+    }
+    allVouchers.value = await res.json()
+  } finally {
+    loadingVouchers.value = false
+  }
+}
+
+async function addVoucher(entry: Record<string, unknown>) {
+  const res = await fetch('/api/vouchers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(entry),
+  })
+  const data = await res.json()
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to save voucher')
+  }
+  allVouchers.value = [data, ...allVouchers.value]
+}
+
+async function updateVoucherStatus(id: string, status: string) {
+  const res = await fetch(`/api/vouchers/${encodeURIComponent(id)}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  })
+  const data = await res.json()
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to update voucher status')
+  }
+  const index = allVouchers.value.findIndex((v) => v.id === id)
+  if (index !== -1) {
+    allVouchers.value[index] = data
+  }
 }
 
 type OnboardingUser = {
   id: string
   email: string
-  department: string
   addedAt: string
 }
 
-function loadOnboardingUsers(): OnboardingUser[] {
-  try {
-    return JSON.parse(localStorage.getItem('pcv_onboarding_users') || '[]')
-  } catch {
-    return []
+const onboardingUsers = ref<OnboardingUser[]>([])
+
+async function fetchOnboardingUsers() {
+  const res = await fetch('/api/admin/users')
+  if (!res.ok) {
+    throw new Error('Failed to load users')
   }
+  onboardingUsers.value = await res.json()
 }
 
-const onboardingUsers = ref<OnboardingUser[]>(loadOnboardingUsers())
-
-function addOnboardingUser(email: string, department: string) {
-  const entry: OnboardingUser = {
-    id: crypto.randomUUID(),
-    email,
-    department,
-    addedAt: new Date().toISOString().slice(0, 10),
+async function addOnboardingUser(email: string, password: string, createdBy?: string) {
+  const res = await fetch('/api/admin/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, createdBy }),
+  })
+  const data = await res.json()
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to add user')
   }
-  onboardingUsers.value = [...onboardingUsers.value, entry]
-  localStorage.setItem('pcv_onboarding_users', JSON.stringify(onboardingUsers.value))
+  onboardingUsers.value = [data, ...onboardingUsers.value]
 }
 
-function removeOnboardingUser(id: string) {
+async function removeOnboardingUser(id: string) {
+  const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' })
+  if (!res.ok) {
+    const data = await res.json()
+    throw new Error(data.error || 'Failed to remove user')
+  }
   onboardingUsers.value = onboardingUsers.value.filter((user) => user.id !== id)
-  localStorage.setItem('pcv_onboarding_users', JSON.stringify(onboardingUsers.value))
+}
+
+async function changePassword(email: string, currentPassword: string, newPassword: string) {
+  const res = await fetch('/api/auth/change-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, currentPassword, newPassword }),
+  })
+  const data = await res.json()
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to update password')
+  }
+}
+
+async function sendInviteEmail(email: string, password: string, from?: string) {
+  const res = await fetch('/api/email/send-invite', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ to: email, password, from }),
+  })
+  const data = await res.json()
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to send invite email')
+  }
 }
 
 export {
   addOnboardingUser,
   addVoucher,
   allVouchers,
+  changePassword,
+  fetchOnboardingUsers,
+  fetchVouchers,
   isAdmin,
+  loadingVouchers,
   isLoggedIn,
   loginUser,
   logoutUser,
   onboardingUsers,
   removeOnboardingUser,
+  sendInviteEmail,
+  updateVoucherStatus,
   userEmail,
   userRole,
 }
