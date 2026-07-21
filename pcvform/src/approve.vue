@@ -139,7 +139,7 @@
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import FilePreview from './FilePreview.vue'
-import { allVouchers, loadingVouchers, updateVoucherStatus } from './stores/appState'
+import { allVouchers, API_BASE, loadingVouchers, updateVoucherStatus } from './stores/appState'
 
 const route = useRoute()
 const showFilePreview = ref(false)
@@ -166,7 +166,7 @@ async function setDecision(status) {
 async function notifyCcOfApproval() {
   if (!voucher.value?.cc) return
   try {
-    await fetch('/api/email/send-approved-cc', {
+    await fetch(`${API_BASE}/api/email/send-approved-cc`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

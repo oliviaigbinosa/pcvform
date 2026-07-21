@@ -131,6 +131,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { API_BASE } from './stores/appState'
 import FilePreview from './FilePreview.vue'
 
 const props = defineProps({
@@ -184,7 +185,7 @@ async function sendVoucher() {
   const approvalLink = `${window.location.origin}/approve?id=${encodeURIComponent(props.voucherNo)}`
 
   try {
-    const res = await fetch('/api/email/send-voucher', {
+    const res = await fetch(`${API_BASE}/api/email/send-voucher`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

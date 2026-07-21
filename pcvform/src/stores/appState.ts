@@ -133,6 +133,7 @@ async function sendInviteEmail(email: string, password: string, from?: string) {
 
 export {
   addOnboardingUser,
+  API_BASE,
   addVoucher,
   allVouchers,
   changePassword,

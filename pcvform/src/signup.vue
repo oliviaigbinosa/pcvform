@@ -94,7 +94,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { isLoggedIn, loginUser } from './stores/appState'
+import { API_BASE, isLoggedIn, loginUser } from './stores/appState'
 
 const router = useRouter()
 
@@ -127,7 +127,7 @@ async function handleLogin() {
 
   loggingIn.value = true
   try {
-    const res = await fetch('/api/auth/login', {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
