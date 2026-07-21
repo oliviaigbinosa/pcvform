@@ -85,7 +85,13 @@
           loginErrors.general
         }}</span>
 
-        <button type="submit" class="btn btn-primary login-submit">Sign in</button>
+        <button
+          type="submit"
+          class="btn btn-primary login-submit"
+          :disabled="loggingIn"
+        >
+          {{ loggingIn ? 'Signing in...' : 'Sign in' }}
+        </button>
       </form>
     </div>
   </div>
