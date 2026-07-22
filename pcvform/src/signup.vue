@@ -24,7 +24,7 @@
           <input
             v-model="loginForm.email"
             type="email"
-            placeholder="user@getpayedmail.com"
+            placeholder="user@getpayedmail.com or @gmail.com"
             :class="{ error: loginErrors.email }"
             :disabled="loggingIn"
             @input="delete loginErrors.email"
@@ -105,7 +105,7 @@ import { API_BASE, isLoggedIn, loginUser } from './stores/appState'
 const router = useRouter()
 
 function isLoginEmail(v) {
-  return /^[^\s@]+@getpayedmail\.com$/.test(v)
+  return /^[^\s@]+@(getpayedmail\.com|gmail\.com)$/.test(v)
 }
 
 const showPassword = ref(false)
@@ -123,7 +123,7 @@ async function handleLogin() {
   delete loginErrors.general
 
   if (!isLoginEmail(loginForm.email)) {
-    loginErrors.email = 'Email must be a @getpayedmail.com address'
+    loginErrors.email = 'Email must be a @getpayedmail.com or @gmail.com address'
   }
   if (!loginForm.password) {
     loginErrors.password = 'Password is required'
