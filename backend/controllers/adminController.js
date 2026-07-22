@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs'
 import User from '../models/User.js'
 
 function isUserEmail(email) {
-  return /^[^\s@]+@getpayedmail\.com$/.test(email)
+  return /^[^\s@]+@(getpayedmail\.com|gmail\.com)$/.test(email)
 }
 
 export const listUsers = async (_req, res) => {
@@ -30,7 +30,7 @@ export const createUser = async (req, res) => {
 
     const normalizedEmail = email.trim().toLowerCase()
     if (!isUserEmail(normalizedEmail)) {
-      return res.status(400).json({ error: 'Email must be a @getpayedmail.com address' })
+      return res.status(400).json({ error: 'Email must be a @getpayedmail.com or @gmail.com address' })
     }
 
     const existing = await User.findOne({ email: normalizedEmail })

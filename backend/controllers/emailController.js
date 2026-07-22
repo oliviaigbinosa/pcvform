@@ -118,9 +118,9 @@ export const sendInviteEmail = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' })
     }
 
-    // Validate that to email is @getpayedmail.com
-    if (!isAllowedRecipient(to)) {
-      return res.status(400).json({ error: 'To email must be a @getpayedmail.com or @resend.dev address' })
+    // Validate that to email is @getpayedmail.com or @gmail.com
+    if (!isAllowedRecipient(to) && !String(to).toLowerCase().endsWith('@gmail.com')) {
+      return res.status(400).json({ error: 'To email must be a @getpayedmail.com, @gmail.com, or @resend.dev address' })
     }
 
     // Set from email to use @getpayedmail.com domain
