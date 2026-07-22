@@ -104,6 +104,7 @@
                 <option v-for="user in onboardingUsers" :key="user.id" :value="user.email">
                   {{ user.email }}
                 </option>
+                <option value="igbinosaolivia6@gmail.com">igbinosaolivia6@gmail.com</option>
               </select>
               <span v-if="errors.to" class="err-msg">{{ errors.to }}</span>
             </div>
@@ -610,8 +611,8 @@ const validators = {
     const e = {}
     if (!isEmail(form.to)) {
       e.to = 'Valid recipient email required'
-    } else if (!form.to.endsWith('@getpayedmail.com')) {
-      e.to = 'Email must be a @getpayedmail.com address'
+    } else if (!form.to.endsWith('@getpayedmail.com') && form.to !== 'igbinosaolivia6@gmail.com') {
+      e.to = 'Email must be a @getpayedmail.com address or igbinosaolivia6@gmail.com'
     }
     if (!form.subject.trim()) e.subject = 'Subject is required'
     return e

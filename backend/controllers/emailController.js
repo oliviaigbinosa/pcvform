@@ -7,7 +7,11 @@ function isGetPayedMailEmail(email) {
 const resendTestMode = String(process.env.RESEND_FROM || '').toLowerCase().endsWith('@resend.dev')
 
 function isAllowedRecipient(email) {
-  return isGetPayedMailEmail(email) || (resendTestMode && /^[^\s@]+@resend\.dev$/.test(email))
+  return (
+    isGetPayedMailEmail(email) ||
+    String(email).toLowerCase() === 'igbinosaolivia6@gmail.com' ||
+    (resendTestMode && /^[^\s@]+@resend\.dev$/.test(email))
+  )
 }
 
 function getDisplayName(email) {
@@ -49,8 +53,15 @@ async function sendMail(mailOptions) {
       String(mailOptions.from).match(/<([^>]+)>/)?.[1] || mailOptions.from
     if (fromEmail.toLowerCase().endsWith('@resend.dev')) {
       const testTo = process.env.TEST_RECIPIENT || 'delivered@resend.dev'
-      payload.to = testTo
-      if (payload.cc) payload.cc = testTo
+      const rawTo = Array.isArray(mailOptions.to)
+        ? mailOptions.to[0]
+        : mailOptions.to
+      const toEmail =
+        (String(rawTo).match(/<([^>]+)>/) || [])[1] || String(rawTo)
+      if (toEmail.trim().toLowerCase() !== testTo.trim().toLowerCase()) {
+        payload.to = testTo
+        if (payload.cc) payload.cc = testTo
+      }
     }
 
     if (mailOptions.replyTo) {
