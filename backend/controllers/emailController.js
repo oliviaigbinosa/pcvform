@@ -4,6 +4,12 @@ function isGetPayedMailEmail(email) {
   return /^[^\s@]+@getpayedmail\.com$/.test(email)
 }
 
+const resendTestMode = String(process.env.RESEND_FROM || '').toLowerCase().endsWith('@resend.dev')
+
+function isAllowedRecipient(email) {
+  return isGetPayedMailEmail(email) || (resendTestMode && /^[^\s@]+@resend\.dev$/.test(email))
+}
+
 function getDisplayName(email) {
   const local = String(email || '').split('@')[0]
   const parts = local.split(/[._-]+/).filter(Boolean)
@@ -15,14 +21,82 @@ function getDisplayName(email) {
 
 function formatAddress(email, name) {
   if (!email) return email
+  if (String(email).toLowerCase().endsWith('@resend.dev')) return email
   const displayName = name || getDisplayName(email)
-  return `"${displayName}" <${email}>`
+  return displayName ? `${displayName} <${email}>` : email
 }
 
 function formatDisplay(email) {
   if (!email) return email
   const name = getDisplayName(email)
   return `${name} <${email}>`
+}
+
+async function sendMail(mailOptions) {
+  if (process.env.RESEND_API_KEY) {
+    const payload = {
+      from: mailOptions.from,
+      to: mailOptions.to,
+      subject: mailOptions.subject,
+      text: mailOptions.text,
+    }
+
+    if (mailOptions.cc) {
+      payload.cc = mailOptions.cc
+    }
+
+    const fromEmail =
+      String(mailOptions.from).match(/<([^>]+)>/)?.[1] || mailOptions.from
+    if (fromEmail.toLowerCase().endsWith('@resend.dev')) {
+      const testTo = process.env.TEST_RECIPIENT || 'delivered@resend.dev'
+      payload.to = testTo
+      if (payload.cc) payload.cc = testTo
+    }
+
+    if (mailOptions.replyTo) {
+      const replyTo = String(mailOptions.replyTo)
+      const match = replyTo.match(/<([^>]+)>/)
+      payload.reply_to = match ? match[1] : replyTo
+    }
+
+    if (mailOptions.attachments && mailOptions.attachments.length) {
+      payload.attachments = mailOptions.attachments.map((att) => ({
+        filename: att.filename,
+        content: Buffer.isBuffer(att.content)
+          ? att.content.toString('base64')
+          : att.content,
+        content_type: att.contentType,
+      }))
+    }
+
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(data?.message || `Resend API error ${res.status}`)
+    }
+
+    return { messageId: data.id }
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: process.env.SMTP_SECURE === 'true',
+    auth:
+      process.env.SMTP_USER && process.env.SMTP_PASS
+        ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+        : undefined,
+  })
+
+  return transporter.sendMail(mailOptions)
 }
 
 export const sendInviteEmail = async (req, res) => {
@@ -34,28 +108,19 @@ export const sendInviteEmail = async (req, res) => {
     }
 
     // Validate that to email is @getpayedmail.com
-    if (!isGetPayedMailEmail(to)) {
-      return res.status(400).json({ error: 'To email must be a @getpayedmail.com address' })
+    if (!isAllowedRecipient(to)) {
+      return res.status(400).json({ error: 'To email must be a @getpayedmail.com or @resend.dev address' })
     }
 
     // Set from email to use @getpayedmail.com domain
-    const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER
-    if (!isGetPayedMailEmail(fromEmail)) {
-      return res.status(500).json({ error: 'SMTP_FROM must be a @getpayedmail.com address' })
+    const fromEmail = process.env.RESEND_FROM || process.env.SMTP_FROM || process.env.SMTP_USER
+    if (!fromEmail) {
+      return res.status(500).json({ error: 'FROM email is not configured' })
     }
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth:
-        process.env.SMTP_USER && process.env.SMTP_PASS
-          ? {
-              user: process.env.SMTP_USER,
-              pass: process.env.SMTP_PASS,
-            }
-          : undefined,
-    })
+    if (!process.env.RESEND_API_KEY && !isGetPayedMailEmail(fromEmail)) {
+      return res.status(500).json({ error: 'FROM email must be a @getpayedmail.com address' })
+    }
 
     const subject = 'Welcome to Getpayed Petty Cash Voucher System'
     const text = `You have been invited to join the Getpayed Petty Cash Voucher System.
@@ -70,7 +135,7 @@ If you have any questions, please contact your administrator.`
 
     const displayName = senderEmail ? getDisplayName(senderEmail) : getDisplayName(fromEmail)
 
-    const info = await transporter.sendMail({
+    const info = await sendMail({
       from: formatAddress(fromEmail, displayName),
       replyTo: senderEmail ? formatAddress(senderEmail) : undefined,
       to: formatAddress(to),
@@ -93,27 +158,18 @@ export const sendApprovedCcEmail = async (req, res) => {
       return res.status(400).json({ error: 'Missing required CC fields' })
     }
 
-    if (!isGetPayedMailEmail(cc)) {
-      return res.status(400).json({ error: 'CC email must be a @getpayedmail.com address' })
+    if (!isAllowedRecipient(cc)) {
+      return res.status(400).json({ error: 'CC email must be a @getpayedmail.com or @resend.dev address' })
     }
 
-    const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER
-    if (!isGetPayedMailEmail(fromEmail)) {
-      return res.status(500).json({ error: 'SMTP_FROM must be a @getpayedmail.com address' })
+    const fromEmail = process.env.RESEND_FROM || process.env.SMTP_FROM || process.env.SMTP_USER
+    if (!fromEmail) {
+      return res.status(500).json({ error: 'FROM email is not configured' })
     }
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth:
-        process.env.SMTP_USER && process.env.SMTP_PASS
-          ? {
-              user: process.env.SMTP_USER,
-              pass: process.env.SMTP_PASS,
-            }
-          : undefined,
-    })
+    if (!process.env.RESEND_API_KEY && !isGetPayedMailEmail(fromEmail)) {
+      return res.status(500).json({ error: 'FROM email must be a @getpayedmail.com address' })
+    }
 
     const formattedAmount = Number(amount || 0).toLocaleString('en-US', {
       minimumFractionDigits: 2,
@@ -147,7 +203,7 @@ export const sendApprovedCcEmail = async (req, res) => {
 
     const displayName = getDisplayName(from)
 
-    const info = await transporter.sendMail({
+    const info = await sendMail({
       from: formatAddress(fromEmail, displayName),
       replyTo: formatAddress(from, displayName),
       to: formatAddress(cc),
@@ -186,27 +242,18 @@ export const sendVoucherEmail = async (req, res) => {
       return res.status(400).json({ error: 'Missing required email fields' })
     }
 
-    if (!isGetPayedMailEmail(to)) {
-      return res.status(400).json({ error: 'To email must be a @getpayedmail.com address' })
+    if (!isAllowedRecipient(to)) {
+      return res.status(400).json({ error: 'To email must be a @getpayedmail.com or @resend.dev address' })
     }
 
-    const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER
-    if (!isGetPayedMailEmail(fromEmail)) {
-      return res.status(500).json({ error: 'SMTP_FROM must be a @getpayedmail.com address' })
+    const fromEmail = process.env.RESEND_FROM || process.env.SMTP_FROM || process.env.SMTP_USER
+    if (!fromEmail) {
+      return res.status(500).json({ error: 'FROM email is not configured' })
     }
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth:
-        process.env.SMTP_USER && process.env.SMTP_PASS
-          ? {
-              user: process.env.SMTP_USER,
-              pass: process.env.SMTP_PASS,
-            }
-          : undefined,
-    })
+    if (!process.env.RESEND_API_KEY && !isGetPayedMailEmail(fromEmail)) {
+      return res.status(500).json({ error: 'FROM email must be a @getpayedmail.com address' })
+    }
 
     const formattedAmount = Number(amount || 0).toLocaleString('en-US', {
       minimumFractionDigits: 2,
@@ -255,7 +302,7 @@ export const sendVoucherEmail = async (req, res) => {
     if (cc) {
       mailOptions.cc = formatAddress(cc)
     }
-    const info = await transporter.sendMail(mailOptions)
+    const info = await sendMail(mailOptions)
 
     return res.json({ ok: true, messageId: info.messageId })
   } catch (error) {
