@@ -58,10 +58,10 @@ async function sendMail(mailOptions) {
         : mailOptions.to
       const toEmail =
         (String(rawTo).match(/<([^>]+)>/) || [])[1] || String(rawTo)
-      if (toEmail.trim().toLowerCase() !== testTo.trim().toLowerCase()) {
-        payload.to = testTo
-        if (payload.cc) payload.cc = testTo
-      }
+      const normalizedTo = toEmail.trim().toLowerCase()
+      const normalizedTest = testTo.trim().toLowerCase()
+      payload.to = normalizedTo === normalizedTest ? toEmail.trim() : testTo
+      if (payload.cc) payload.cc = testTo
     }
 
     if (mailOptions.replyTo) {
