@@ -104,7 +104,7 @@
                 <option v-for="user in onboardingUsers" :key="user.id" :value="user.email">
                   {{ user.email }}
                 </option>
-                <option value="igbinosaolivia6@gmail.com">igbinosaolivia6@gmail.com</option>
+               
               </select>
               <span v-if="errors.to" class="err-msg">{{ errors.to }}</span>
             </div>
