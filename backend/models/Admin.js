@@ -5,6 +5,7 @@ const adminSchema = new mongoose.Schema({
   password: { type: String, required: true },
   role: { type: String, default: 'admin' },
   department: { type: String },
+  createdAt: { type: Date, default: Date.now },
 })
 
 export default mongoose.model('Admin', adminSchema)
