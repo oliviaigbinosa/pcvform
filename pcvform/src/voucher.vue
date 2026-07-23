@@ -113,7 +113,7 @@
         <div>
           <h1 class="serif vouchers-title">My Vouchers</h1>
           <p class="vouchers-sub">
-            {{ myVouchers.length }} voucher{{ myVouchers.length !== 1 ? 's' : '' }} submitted by you
+            {{ displayedVouchers.length }} voucher{{ displayedVouchers.length !== 1 ? 's' : '' }} {{ activeTab === 'sent' ? 'sent by you' : 'sent to you' }}
           </p>
         </div>
         <button class="btn btn-primary" @click="goToForm">
@@ -132,7 +132,30 @@
         </button>
       </div>
 
-      <div v-if="!myVouchers.length" class="vouchers-empty card">
+      <nav class="dashboard-tabs" role="tablist" aria-label="My voucher tabs">
+        <button
+          role="tab"
+          class="dashboard-tabs__tab"
+          :class="{ active: activeTab === 'sent' }"
+          :aria-selected="activeTab === 'sent'"
+          @click="activeTab = 'sent'"
+        >
+          Sent
+          <span v-if="sentVouchers.length" class="dashboard-tabs__badge">{{ sentVouchers.length }}</span>
+        </button>
+        <button
+          role="tab"
+          class="dashboard-tabs__tab"
+          :class="{ active: activeTab === 'received' }"
+          :aria-selected="activeTab === 'received'"
+          @click="activeTab = 'received'"
+        >
+          Received
+          <span v-if="receivedVouchers.length" class="dashboard-tabs__badge">{{ receivedVouchers.length }}</span>
+        </button>
+      </nav>
+
+      <div v-if="!displayedVouchers.length" class="vouchers-empty card">
         <svg
           width="40"
           height="40"
@@ -144,9 +167,11 @@
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
           <polyline points="14 2 14 8 20 8" />
         </svg>
-        <p class="vouchers-empty__title">No vouchers yet</p>
-        <p class="vouchers-empty__sub">Vouchers you submit will appear here.</p>
-        <button class="btn btn-primary" @click="goToForm">Create your first voucher</button>
+        <p class="vouchers-empty__title">No {{ activeTab === 'sent' ? 'sent' : 'received' }} vouchers</p>
+        <p class="vouchers-empty__sub">
+          {{ activeTab === 'sent' ? 'Vouchers you submit will appear here.' : 'Vouchers sent to you will appear here.' }}
+        </p>
+        <button v-if="activeTab === 'sent'" class="btn btn-primary" @click="goToForm">Create your first voucher</button>
       </div>
 
       <div v-else class="vouchers-table-wrap card">
@@ -164,7 +189,7 @@
           </thead>
           <tbody>
             <tr
-              v-for="voucher in [...myVouchers].reverse()"
+              v-for="voucher in [...displayedVouchers].reverse()"
               :key="voucher.id"
               class="vouchers-table__row"
               @click="selectedVoucher = voucher"
@@ -182,8 +207,6 @@
           </tbody>
         </table>
       </div>
-
-      
     </template>
     <FilePreview :show="showFilePreview" :file="previewFile" @close="showFilePreview = false" />
   </div>
@@ -214,8 +237,15 @@ function openFilePreview(doc) {
   showFilePreview.value = true
 }
 
-const myVouchers = computed(() =>
+const activeTab = ref('sent')
+const sentVouchers = computed(() =>
   allVouchers.value.filter((voucher) => voucher.submittedBy === userEmail.value),
+)
+const receivedVouchers = computed(() =>
+  allVouchers.value.filter((voucher) => voucher.to === userEmail.value),
+)
+const displayedVouchers = computed(() =>
+  activeTab.value === 'sent' ? sentVouchers.value : receivedVouchers.value,
 )
 
 </script>
