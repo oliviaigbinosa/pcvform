@@ -5,7 +5,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 const userEmail = ref(sessionStorage.getItem('pcv_user') || '')
 const userRole = ref(sessionStorage.getItem('pcv_role') || '')
 const isLoggedIn = ref(Boolean(userEmail.value))
-const isAdmin = computed(() => userRole.value === 'admin')
+const isAdmin = computed(() => userRole.value === 'admin' || userRole.value === 'super admin')
 const allVouchers = ref<any[]>([])
 const loadingVouchers = ref(true)
 

@@ -29,7 +29,7 @@
         <div class="sidebar__avatar">{{ userInitial }}</div>
         <div class="sidebar__user-info">
           <p class="sidebar__user-email">{{ userEmail }}</p>
-          <p v-if="isAdmin" class="sidebar__user-role">Administrator</p>
+          <p v-if="isAdmin" class="sidebar__user-role">{{ userRole === 'super admin' ? 'Super Admin' : 'Administrator' }}</p>
         </div>
       </div>
 
@@ -168,7 +168,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { allVouchers, isAdmin, logoutUser, userEmail } from './stores/appState'
+import { allVouchers, isAdmin, logoutUser, userEmail, userRole } from './stores/appState'
 
 const route = useRoute()
 const router = useRouter()

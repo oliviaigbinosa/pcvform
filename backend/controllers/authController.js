@@ -17,7 +17,7 @@ export const login = async (req, res) => {
       if (!valid) {
         return res.status(401).json({ error: 'Invalid email or password' })
       }
-      return res.json({ email: admin.email, role: 'admin' })
+      return res.json({ email: admin.email, role: admin.role || 'admin' })
     }
 
     const user = await User.findOne({ email: normalizedEmail })

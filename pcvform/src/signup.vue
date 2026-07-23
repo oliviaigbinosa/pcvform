@@ -149,7 +149,7 @@ async function handleLogin() {
     }
 
     loginUser(data.email, data.role)
-    router.replace(data.role === 'admin' ? { name: 'admin' } : { name: 'form' })
+    router.replace(data.role === 'admin' || data.role === 'super admin' ? { name: 'admin' } : { name: 'form' })
   } catch {
     loginErrors.general = 'Could not reach the server. Make sure the backend is running.'
   } finally {
