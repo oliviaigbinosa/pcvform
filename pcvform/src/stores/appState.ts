@@ -85,11 +85,15 @@ async function fetchOnboardingUsers() {
   onboardingUsers.value = await res.json()
 }
 
-async function addOnboardingUser(email: string, password: string, createdBy?: string) {
+async function addOnboardingUser(email: string, password: string, createdBy?: string, department?: string, role?: string) {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (createdBy) {
+    headers['x-admin-email'] = createdBy
+  }
   const res = await fetch(`${API_BASE}/api/admin/users`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, createdBy }),
+    headers,
+    body: JSON.stringify({ email, password, createdBy, department, role }),
   })
   const data = await res.json()
   if (!res.ok) {

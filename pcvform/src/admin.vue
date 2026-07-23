@@ -26,7 +26,7 @@
             <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
-          Admin View
+          {{ userRole === 'super admin' ? 'SUPER ADMIN VIEW' : 'ADMIN VIEW' }}
         </span>
       </div>
     </div>
@@ -391,34 +391,31 @@
             <span v-if="onboardErrors.email" class="err-msg">{{ onboardErrors.email }}</span>
           </div>
           <div class="field onboarding-field">
-            <label class="mono-label">Password </label>
-            <button
-              v-if="!generatedPassword"
-              type="button"
-              class="btn btn-generate-password"
-              @click="generatePassword"
+            <label class="mono-label">Department </label>
+            <select
+              v-model="onboardForm.department"
+              :class="{ error: onboardErrors.department }"
+              @change="delete onboardErrors.department"
             >
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
-              Generate Password
-            </button>
-            <input
-              v-else
-              :value="generatedPassword"
-              type="text"
-              readonly
-              class="password-display"
-            />
-            <span v-if="onboardErrors.password" class="err-msg">{{ onboardErrors.password }}</span>
+              <option value="" disabled>Select department</option>
+              <option v-for="department in adminDepts" :key="department" :value="department">
+                {{ department }}
+              </option>
+            </select>
+            <span v-if="onboardErrors.department" class="err-msg">{{ onboardErrors.department }}</span>
+          </div>
+          <div v-if="userRole === 'super admin'" class="field onboarding-field">
+            <label class="mono-label">Role </label>
+            <select
+              v-model="onboardForm.role"
+              :class="{ error: onboardErrors.role }"
+              @change="delete onboardErrors.role"
+            >
+              <option value="" disabled>Select role</option>
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+            <span v-if="onboardErrors.role" class="err-msg">{{ onboardErrors.role }}</span>
           </div>
           <span v-if="onboardErrors.general" class="err-msg">{{ onboardErrors.general }}</span>
           <button type="submit" class="btn btn-primary onboarding-submit" :disabled="addingUser">
@@ -509,6 +506,7 @@ import {
   removeOnboardingUser,
   fetchOnboardingUsers,
   userEmail,
+  userRole,
   sendInviteEmail,
 } from './stores/appState'
 
@@ -517,7 +515,6 @@ const selectedVoucher = ref(null)
 const addingUser = ref(false)
 const removingUserId = ref('')
 const loadingUsers = ref(false)
-const generatedPassword = ref('')
 const showFilePreview = ref(false)
 const previewFile = ref(null)
 const deptDropdownOpen = ref(false)
@@ -533,7 +530,7 @@ function togglePurpose(id) {
   expandedPurposes[id] = !expandedPurposes[id]
 }
 
-const onboardForm = reactive({ email: '', password: '' })
+const onboardForm = reactive({ email: '', department: '', role: 'user' })
 const onboardErrors = reactive({})
 
 onMounted(async () => {
@@ -640,29 +637,32 @@ function generateStrongPassword() {
   return password
 }
 
-function generatePassword() {
-  generatedPassword.value = generateStrongPassword()
-}
 
 async function handleAddUser() {
   delete onboardErrors.email
-  delete onboardErrors.password
+  delete onboardErrors.department
+  delete onboardErrors.role
   delete onboardErrors.general
 
   if (!isOnboardEmail(onboardForm.email)) {
     onboardErrors.email = 'Email must be a @getpayedmail.com or @gmail.com address'
   }
-  if (!generatedPassword.value) {
-    onboardErrors.password = 'Please generate a password first'
+  if (!onboardForm.department) {
+    onboardErrors.department = 'Please select a department'
+  }
+  if (userRole.value === 'super admin' && !onboardForm.role) {
+    onboardErrors.role = 'Please select a role'
   }
   if (Object.keys(onboardErrors).length) return
 
+  const password = generateStrongPassword()
   addingUser.value = true
   try {
-    await sendInviteEmail(onboardForm.email, generatedPassword.value, userEmail.value)
-    await addOnboardingUser(onboardForm.email, generatedPassword.value, userEmail.value)
+    await sendInviteEmail(onboardForm.email, password, userEmail.value)
+    await addOnboardingUser(onboardForm.email, password, userEmail.value, onboardForm.department, onboardForm.role)
     onboardForm.email = ''
-    generatedPassword.value = ''
+    onboardForm.department = ''
+    onboardForm.role = 'user'
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to add user'
     if (message.includes('already been added')) {
