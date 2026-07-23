@@ -170,8 +170,8 @@
         </button>
       </nav>
 
-      <div v-if="loadingVouchers" class="vouchers-loading card">
-        <p>Loading vouchers…</p>
+      <div v-if="loadingVouchers" class="vouchers-loading">
+        Loading vouchers…
       </div>
 
       <div v-else-if="!displayedVouchers.length" class="vouchers-empty card">
@@ -397,5 +397,14 @@ const displayedVouchers = computed(() =>
   -webkit-line-clamp: unset;
   line-clamp: unset;
   display: block;
+}
+
+.vouchers-loading {
+  display: grid;
+  place-items: center;
+  min-height: 60vh;
+  color: #000;
+  font-size: 20px;
+  font-weight: 700;
 }
 </style>
