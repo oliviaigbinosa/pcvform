@@ -192,7 +192,7 @@
               v-for="voucher in [...displayedVouchers].reverse()"
               :key="voucher.id"
               class="vouchers-table__row"
-              @click="selectedVoucher = voucher"
+              @click="openVoucher(voucher)"
             >
               <td>
                 <code class="voucher-cell-no">{{ voucher.id }}</code>
@@ -230,6 +230,14 @@ function togglePurpose(id) {
 
 function goToForm() {
   router.push({ name: 'form' })
+}
+
+function openVoucher(voucher) {
+  if (activeTab.value === 'received') {
+    router.push({ name: 'approve', query: { id: voucher.id } })
+  } else {
+    selectedVoucher.value = voucher
+  }
 }
 
 function openFilePreview(doc) {
