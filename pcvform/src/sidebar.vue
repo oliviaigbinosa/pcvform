@@ -145,6 +145,22 @@
         </button>
       </div>
     </aside>
+
+    <div v-if="showLogoutModal" class="modal-backdrop" @click.self="showLogoutModal = false">
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Sign out confirmation" style="max-width: 640px;">
+        <div class="modal-header" style="padding: 8px 24px 4px;">
+          <div class="modal-header__title" style="font-size: 16px; font-weight: 700; letter-spacing: -0.04em;">Sign out?</div>
+          <button class="modal-close" @click="showLogoutModal = false" aria-label="Close">✕</button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size: 18px; font-weight: 900; letter-spacing: -0.04em; margin: 0;">Are you sure you want to sign out?</p>
+        </div>
+        <div class="modal-footer" style="border-top: none;">
+          <button class="btn btn-outline" style="border-radius: 9999px;" @click="showLogoutModal = false">Cancel</button>
+          <button class="btn btn-primary" style="border-radius: 9999px;" @click="confirmLogout">Yes, Sign out</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -156,6 +172,7 @@ import { allVouchers, isAdmin, logoutUser, userEmail } from './stores/appState'
 const route = useRoute()
 const router = useRouter()
 const sidebarOpen = ref(false)
+const showLogoutModal = ref(false)
 
 const myVouchers = computed(() =>
   allVouchers.value.filter((voucher) => voucher.submittedBy === userEmail.value),
@@ -163,6 +180,11 @@ const myVouchers = computed(() =>
 const userInitial = computed(() => userEmail.value.charAt(0).toUpperCase())
 
 function handleLogout() {
+  showLogoutModal.value = true
+}
+
+function confirmLogout() {
+  showLogoutModal.value = false
   logoutUser()
   sidebarOpen.value = false
   router.push({ name: 'login' })

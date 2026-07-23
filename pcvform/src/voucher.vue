@@ -24,7 +24,7 @@
           This voucher form has been declined
         </div>
         <div v-else class="approve-actions-bar">
-          <button class="btn btn-approve" :disabled="processing" @click="approve">
+          <button class="btn btn-approve" :disabled="processing" @click="showApproveModal = true">
             {{ processing && processingAction === 'approve' ? 'Approving…' : 'Approve' }}
           </button>
           <button class="btn btn-decline" @click="showDeclineModal = true">Decline</button>
@@ -241,6 +241,24 @@
       </div>
     </div>
 
+    <div v-if="showApproveModal" class="modal-backdrop" @click.self="showApproveModal = false">
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Approve confirmation" style="max-width: 640px;">
+        <div class="modal-header" style="padding: 8px 24px 4px;">
+          <div class="modal-header__title" style="font-size: 16px; font-weight: 700; letter-spacing: -0.04em;">Approve voucher?</div>
+          <button class="modal-close" @click="showApproveModal = false" aria-label="Close">✕</button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size: 18px; font-weight: 900; letter-spacing: -0.04em; margin: 0;">Are you sure you want to approve this petty cash voucher?<span style="display: block; margin-top: 12px; font-size: 14px; color: var(--muted-fg); font-weight: 500;">This action cannot be undone.</span></p>
+        </div>
+        <div class="modal-footer" style="border-top: none;">
+          <button class="btn btn-outline" style="border-radius: 9999px;" @click="showApproveModal = false">Cancel</button>
+          <button class="btn btn-approve" :disabled="processing" style="border-radius: 9999px;" @click="confirmApprove">
+            {{ processing && processingAction === 'approve' ? 'Approving…' : 'Yes, Approve' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <FilePreview :show="showFilePreview" :file="previewFile" @close="showFilePreview = false" />
   </div>
 </template>
@@ -259,6 +277,7 @@ const expandedPurposes = reactive({})
 const processing = ref(false)
 const processingAction = ref('')
 const showDeclineModal = ref(false)
+const showApproveModal = ref(false)
 
 function togglePurpose(id) {
   expandedPurposes[id] = !expandedPurposes[id]
@@ -275,6 +294,8 @@ function openVoucher(voucher) {
 async function setDecision(status) {
   if (!selectedVoucher.value) return
   await updateVoucherStatus(selectedVoucher.value.id, status)
+  const updated = allVouchers.value.find((v) => v.id === selectedVoucher.value.id)
+  if (updated) selectedVoucher.value = updated
 }
 
 async function notifyCcOfApproval() {
@@ -303,7 +324,7 @@ async function notifyCcOfApproval() {
   }
 }
 
-async function approve() {
+async function confirmApprove() {
   if (processing.value) return
   processing.value = true
   processingAction.value = 'approve'
@@ -314,6 +335,7 @@ async function approve() {
     processing.value = false
     processingAction.value = ''
   }
+  showApproveModal.value = false
 }
 
 async function confirmDecline() {
