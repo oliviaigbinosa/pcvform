@@ -246,7 +246,6 @@ export const sendVoucherEmail = async (req, res) => {
       submissionDate,
       supportingDocs,
       submittedBy,
-      approvalLink,
     } = req.body
 
     if (!to || !subject || !voucherNo) {

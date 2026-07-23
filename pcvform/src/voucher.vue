@@ -16,6 +16,21 @@
         Back
       </button>
 
+      <template v-if="activeTab === 'received'">
+        <div v-if="selectedVoucher.status === 'Approved'" class="approve-message card success">
+          This voucher form has been approved
+        </div>
+        <div v-else-if="selectedVoucher.status === 'Declined'" class="approve-message card declined">
+          This voucher form has been declined
+        </div>
+        <div v-else class="approve-actions-bar">
+          <button class="btn btn-approve" :disabled="processing" @click="approve">
+            {{ processing && processingAction === 'approve' ? 'Approving…' : 'Approve' }}
+          </button>
+          <button class="btn btn-decline" @click="showDeclineModal = true">Decline</button>
+        </div>
+      </template>
+
       <div class="card">
         <div class="preview-head">
           <div>
@@ -208,6 +223,24 @@
         </table>
       </div>
     </template>
+    <div v-if="showDeclineModal" class="modal-backdrop" @click.self="showDeclineModal = false">
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Decline confirmation" style="max-width: 640px;">
+        <div class="modal-header" style="padding: 8px 24px 4px;">
+          <div class="modal-header__title" style="font-size: 16px; font-weight: 700; letter-spacing: -0.04em;">Decline voucher?</div>
+          <button class="modal-close" @click="showDeclineModal = false" aria-label="Close">✕</button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size: 18px; font-weight: 900; letter-spacing: -0.04em; margin: 0;">Are you sure you want to decline this petty cash voucher?<span style="display: block; margin-top: 12px; font-size: 14px; color: var(--muted-fg); font-weight: 500;">This action cannot be undone.</span></p>
+        </div>
+        <div class="modal-footer" style="border-top: none;">
+          <button class="btn btn-outline" style="border-radius: 9999px;" @click="showDeclineModal = false">Cancel</button>
+          <button class="btn btn-decline" :disabled="processing" style="border-radius: 9999px;" @click="confirmDecline">
+            {{ processing && processingAction === 'decline' ? 'Declining…' : 'Yes, Decline' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <FilePreview :show="showFilePreview" :file="previewFile" @close="showFilePreview = false" />
   </div>
 </template>
@@ -216,13 +249,16 @@
 import { computed, ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import FilePreview from './FilePreview.vue'
-import { allVouchers, userEmail } from './stores/appState'
+import { allVouchers, userEmail, API_BASE, updateVoucherStatus } from './stores/appState'
 
 const router = useRouter()
 const selectedVoucher = ref(null)
 const showFilePreview = ref(false)
 const previewFile = ref(null)
 const expandedPurposes = reactive({})
+const processing = ref(false)
+const processingAction = ref('')
+const showDeclineModal = ref(false)
 
 function togglePurpose(id) {
   expandedPurposes[id] = !expandedPurposes[id]
@@ -233,11 +269,64 @@ function goToForm() {
 }
 
 function openVoucher(voucher) {
-  if (activeTab.value === 'received') {
-    router.push({ name: 'approve', query: { id: voucher.id } })
-  } else {
-    selectedVoucher.value = voucher
+  selectedVoucher.value = voucher
+}
+
+async function setDecision(status) {
+  if (!selectedVoucher.value) return
+  await updateVoucherStatus(selectedVoucher.value.id, status)
+}
+
+async function notifyCcOfApproval() {
+  if (!selectedVoucher.value?.cc) return
+  try {
+    await fetch(`${API_BASE}/api/email/send-approved-cc`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cc: selectedVoucher.value.cc,
+        voucherNo: selectedVoucher.value.id,
+        from: selectedVoucher.value.from,
+        to: selectedVoucher.value.to,
+        subject: selectedVoucher.value.subject,
+        submittedBy: selectedVoucher.value.submittedBy,
+        amount: selectedVoucher.value.amount,
+        payee: selectedVoucher.value.payee,
+        department: selectedVoucher.value.department,
+        purpose: selectedVoucher.value.purpose,
+        submissionDate: selectedVoucher.value.submissionDate,
+        supportingDocs: selectedVoucher.value.supportingDocs,
+      }),
+    })
+  } catch (error) {
+    console.error('Failed to send CC approval email:', error)
   }
+}
+
+async function approve() {
+  if (processing.value) return
+  processing.value = true
+  processingAction.value = 'approve'
+  try {
+    await setDecision('Approved')
+    await notifyCcOfApproval()
+  } finally {
+    processing.value = false
+    processingAction.value = ''
+  }
+}
+
+async function confirmDecline() {
+  if (processing.value) return
+  processing.value = true
+  processingAction.value = 'decline'
+  try {
+    await setDecision('Declined')
+  } finally {
+    processing.value = false
+    processingAction.value = ''
+  }
+  showDeclineModal.value = false
 }
 
 function openFilePreview(doc) {

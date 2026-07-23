@@ -182,8 +182,6 @@ async function sendVoucher() {
 
   sending.value = true
 
-  const approvalLink = `${window.location.origin}/approve?id=${encodeURIComponent(props.voucherNo)}`
-
   try {
     const res = await fetch(`${API_BASE}/api/email/send-voucher`, {
       method: 'POST',
@@ -206,7 +204,6 @@ async function sendVoucher() {
           data: f.data,
         })),
         submittedBy: props.userEmail,
-        approvalLink,
       }),
     })
     const data = await res.json()

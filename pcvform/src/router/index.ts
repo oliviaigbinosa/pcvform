@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Admin from '../admin.vue'
-import Approve from '../approve.vue'
 import Settings from '../settings.vue'
 import Signup from '../signup.vue'
 import Voucher from '../voucher.vue'
@@ -14,14 +13,13 @@ const router = createRouter({
     { path: '/login', name: 'login', component: Signup },
     { path: '/form', name: 'form', component: VoucherForm },
     { path: '/vouchers', name: 'vouchers', component: Voucher },
-    { path: '/approve', name: 'approve', component: Approve },
     { path: '/settings', name: 'settings', component: Settings },
     { path: '/admin', name: 'admin', component: Admin },
   ],
 })
 
 router.beforeEach((to, _from) => {
-  const publicRoutes = ['login', 'approve']
+  const publicRoutes = ['login']
   const requiresAuth = !publicRoutes.includes(String(to.name))
 
   if (requiresAuth && !isLoggedIn.value) {
