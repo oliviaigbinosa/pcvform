@@ -170,7 +170,11 @@
         </button>
       </nav>
 
-      <div v-if="!displayedVouchers.length" class="vouchers-empty card">
+      <div v-if="loadingVouchers" class="vouchers-loading card">
+        <p>Loading vouchers…</p>
+      </div>
+
+      <div v-else-if="!displayedVouchers.length" class="vouchers-empty card">
         <svg
           width="40"
           height="40"
@@ -267,7 +271,7 @@
 import { computed, ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import FilePreview from './FilePreview.vue'
-import { allVouchers, userEmail, API_BASE, updateVoucherStatus } from './stores/appState'
+import { allVouchers, loadingVouchers, userEmail, API_BASE, updateVoucherStatus } from './stores/appState'
 
 const router = useRouter()
 const selectedVoucher = ref(null)

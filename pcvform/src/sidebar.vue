@@ -101,6 +101,7 @@
             <line x1="3" y1="18" x2="3.01" y2="18" />
           </svg>
           Vouchers
+          <span v-if="receivedCount" class="sidebar__badge">{{ receivedCount }}</span>
         </router-link>
         <router-link
           v-if="isAdmin"
@@ -153,7 +154,7 @@
           <button class="modal-close" @click="showLogoutModal = false" aria-label="Close">✕</button>
         </div>
         <div class="modal-body">
-          <p style="font-size: 18px; font-weight: 900; letter-spacing: -0.04em; margin: 0;">Are you sure you want to sign out?</p>
+          <p style="font-size: 18px; font-weight: 900; letter-spacing: -0.04em; margin: 0;">Are you sure you want to sign out of this form?</p>
         </div>
         <div class="modal-footer" style="border-top: none;">
           <button class="btn btn-outline" style="border-radius: 9999px;" @click="showLogoutModal = false">Cancel</button>
@@ -178,6 +179,9 @@ const myVouchers = computed(() =>
   allVouchers.value.filter((voucher) => voucher.submittedBy === userEmail.value),
 )
 const userInitial = computed(() => userEmail.value.charAt(0).toUpperCase())
+const receivedCount = computed(() =>
+  allVouchers.value.filter((voucher) => voucher.to === userEmail.value).length,
+)
 
 function handleLogout() {
   showLogoutModal.value = true
