@@ -52,9 +52,6 @@
         @click="activeTab = 'onboarding'"
       >
         User Onboarding
-        <span v-if="pendingOnboardingCount" class="dashboard-tabs__badge">{{
-          pendingOnboardingCount
-        }}</span>
       </button>
     </nav>
 

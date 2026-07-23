@@ -404,7 +404,8 @@ const displayedVouchers = computed(() =>
   place-items: center;
   min-height: 60vh;
   color: #000;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
+  letter-spacing: -0.04em;
 }
 </style>
